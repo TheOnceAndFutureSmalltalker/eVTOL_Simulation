@@ -98,7 +98,8 @@ enum class eVTOLState
 {
 	UNKNOWN,
 	FLYING,
-	CHARGING
+	CHARGING,
+	WAITING
 };
 
 
@@ -111,6 +112,7 @@ public:
 		this->charging_station = charging_station;
 		total_flight_time = 0.0;
 		total_charge_time = 0.0;
+		total_wait_time = 0.0;
 		current_charge = configuration.get_battery_capacity();
 		state = eVTOLState::UNKNOWN;
 	}
@@ -121,6 +123,7 @@ public:
 		charging_station = source_evtol.charging_station;
 		total_flight_time = source_evtol.total_flight_time;
 		total_charge_time = source_evtol.total_charge_time;
+		total_wait_time = source_evtol.total_wait_time;
 		current_charge = source_evtol.current_charge;
 		state = source_evtol.state;
 	}
@@ -139,13 +142,17 @@ public:
 			// if low on battery charge, plug into charging station
 			if (percent_charge_remaining() < 0.5)
 			{
-				state = eVTOLState::CHARGING;
+				state = eVTOLState::WAITING;
 				if (charging_station)
 				{
 					charging_station->addDevice(this);
 					//std::cout << std::endl << "start charging " << configuration.get_company_name() << " " << (cur_time / (1000 * 60)) << std::endl;
 				}
 			}
+		}
+		else if (state == eVTOLState::WAITING)
+		{
+			total_wait_time += (cur_time - prev_time);
 		}
 		else if (state == eVTOLState::CHARGING)
 		{
@@ -168,6 +175,14 @@ public:
 	{
 		current_charge += charge;
 		current_charge = std::min(current_charge, configuration.get_battery_capacity());
+		if (hasFullCharge())
+		{
+			state = eVTOLState::FLYING;
+		}
+		else
+		{
+			state = eVTOLState::CHARGING;
+		}
 	}
 
 	bool hasFullCharge() override
@@ -193,11 +208,18 @@ public:
 		return configuration.energy_use_milliseconds();
 	}
 
+	std::string get_company_name()
+	{
+		return configuration.get_company_name();
+	}
+
 	eVTOLState get_state() { return state; }
 
 	size_t get_total_flight_time() { return total_flight_time; }
 
 	size_t get_total_charge_time() { return total_charge_time; }
+
+	size_t get_total_wait_time() { return total_wait_time; }
 
 	double get_current_charge() { return current_charge; }
 
@@ -207,6 +229,7 @@ private:
 	eVTOLConfiguration configuration;
 	size_t total_flight_time;  // in milliseconds
 	size_t total_charge_time;  // in milliseconds
+	size_t total_wait_time;    // in milliseconds
 	double current_charge;
 	eVTOLState state;
 	ChargingStation* charging_station; // where eVTOLs get their batteries recharged
@@ -256,7 +279,7 @@ void test_eVTOL()
 	eVTOLConfiguration vtol_config("Alpha", 120, 320, 0.6, 1.6, 4, 0.25);
 	eVTOL vtol(vtol_config, nullptr);
 
-	cout << vtol.get_configuration().get_company_name() << endl;
+	cout << vtol.get_company_name() << endl;
 	cout << (vtol.get_state() == eVTOLState::UNKNOWN) << endl;
 	cout << vtol.percent_charge_remaining() << endl;
 	cout << vtol.chargeRate() << endl;

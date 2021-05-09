@@ -98,14 +98,15 @@ public:
 	{
 		using namespace std;
 		cout << endl << "Individual eVTOL Stats" << endl;
-		cout << setw(20) << "COMPANY" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << "CHARGE" << endl;
-		cout << setw(20) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(11) << "REMAINING" << endl;
-		cout << setw(20) << "------------------" << setw(10) << "--------" << setw(10) << "--------" << setw(11) << "---------" << endl;
+		cout << setw(20) << "COMPANY" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << setw(10) << "WAIT" << setw(11) << "CHARGE" << endl;
+		cout << setw(20) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(10) << "TIME" << setw(11) << "REMAINING" << endl;
+		cout << setw(20) << "------------------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << setw(11) << "---------" << endl;
 		std::for_each(evtols.begin(), evtols.end(), [](eVTOL* evtol) {
-			cout << setw(20) << evtol->get_configuration().get_company_name();
+			cout << setw(20) << evtol->get_company_name();
 			cout << fixed << setprecision(2);
 			cout << setw(10) << (evtol->get_total_flight_time() / (1000.0 * 60));
 			cout << setw(10) << (evtol->get_total_charge_time() / (1000.0 * 60));
+			cout << setw(10) << (evtol->get_total_wait_time() / (1000.0 * 60));
 			cout << setw(10) << evtol->percent_charge_remaining() << "%" << endl;
 			});
 	}
@@ -115,11 +116,23 @@ public:
 		using namespace std;
 		cout << endl << "Company Stats" << endl;
 		cout << setw(20) << "COMPANY" << setw(10) << "AVERAGE" << setw(10) << "AVERAGE" << setw(10) << "AVERAGE" << setw(10) << "MAX" << setw(10) << "TOTAL" << endl;
-		cout << setw(20) << "" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << setw(11) << "WAIT" << setw(10) << "NUMBER" << setw(10) << "DISTANCE" << endl;
-		cout << setw(20) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(11) << "TIME" << setw(10) << "FAULTS" << setw(10) << "TRAVELED" << endl;
+		cout << setw(20) << "" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << setw(10) << "WAIT" << setw(10) << "NUMBER" << setw(10) << "DISTANCE" << endl;
+		cout << setw(20) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(10) << "TIME" << setw(10) << "FAULTS" << setw(10) << "TRAVELED" << endl;
+		cout << setw(20) << "------------------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "---------" << setw(10) << "---------" << endl;
+		std::set<std::string> companies;
+		for(auto evtol : evtols)
+		{
+			companies.insert(evtol->get_company_name());
+		}
+		for (std::string company : companies)
+		{
+			std::vector<eVTOL*> company_evtols;
+			std::copy_if(evtols.begin(), evtols.end(), std::back_inserter(company_evtols), [company](eVTOL* evtol) {return evtol->get_company_name() == company; });
 
-		std::set<string> companies;
 
+
+
+		}
 	}
 
 

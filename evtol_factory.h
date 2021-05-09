@@ -51,7 +51,7 @@ void test_eVTOLFactory()
 
 	for (int i = 0; i < 20; i++)
 	{
-		cout << factory.create_eVTOL()->get_configuration().get_company_name() << endl;
+		cout << factory.create_eVTOL()->get_company_name() << endl;
 	}
 	
 }

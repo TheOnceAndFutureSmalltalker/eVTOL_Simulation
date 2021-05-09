@@ -1,7 +1,9 @@
 
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
+#include <set>
 #include <algorithm>
 #include <stdexcept>
 
@@ -87,15 +89,37 @@ public:
 	void print_results()
 	{
 		using namespace std;
-
 		cout << endl << endl << "************************* R E S U L T S ************************" << endl;
-		cout << "Individual eVTOL stats" << endl;
+		print_individual_results();
+		print_company_results();
+	}
+
+	void print_individual_results()
+	{
+		using namespace std;
+		cout << endl << "Individual eVTOL Stats" << endl;
+		cout << setw(20) << "COMPANY" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << "CHARGE" << endl;
+		cout << setw(20) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(11) << "REMAINING" << endl;
+		cout << setw(20) << "------------------" << setw(10) << "--------" << setw(10) << "--------" << setw(11) << "---------" << endl;
 		std::for_each(evtols.begin(), evtols.end(), [](eVTOL* evtol) {
-					cout << evtol->get_configuration().get_company_name() << "  ";
-					cout << evtol->get_total_flight_time() << "  ";
-					cout << evtol->get_total_charge_time() << "  ";
-					cout << evtol->percent_charge_remaining() << endl;
+			cout << setw(20) << evtol->get_configuration().get_company_name();
+			cout << fixed << setprecision(2);
+			cout << setw(10) << (evtol->get_total_flight_time() / (1000.0 * 60));
+			cout << setw(10) << (evtol->get_total_charge_time() / (1000.0 * 60));
+			cout << setw(10) << evtol->percent_charge_remaining() << "%" << endl;
 			});
+	}
+
+	void print_company_results()
+	{
+		using namespace std;
+		cout << endl << "Company Stats" << endl;
+		cout << setw(20) << "COMPANY" << setw(10) << "AVERAGE" << setw(10) << "AVERAGE" << setw(10) << "AVERAGE" << setw(10) << "MAX" << setw(10) << "TOTAL" << endl;
+		cout << setw(20) << "" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << setw(11) << "WAIT" << setw(10) << "NUMBER" << setw(10) << "DISTANCE" << endl;
+		cout << setw(20) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(11) << "TIME" << setw(10) << "FAULTS" << setw(10) << "TRAVELED" << endl;
+
+		std::set<string> companies;
+
 	}
 
 

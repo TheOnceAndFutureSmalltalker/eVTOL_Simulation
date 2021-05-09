@@ -5,6 +5,8 @@
 class ISimulationAgent
 {
 public:
+	virtual void begin() = 0;
+
 	virtual void timestep_update(unsigned long long prev_time, unsigned long long cur_time) = 0;
 };
 

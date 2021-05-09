@@ -77,6 +77,11 @@ struct eVTOLConfiguration
 		return battery_capacity / (time_to_charge * 60 * 60 * 1000); // converting hours to milliseconds
 	}
 
+	double energy_use_milliseconds()
+	{
+		return energy_use_at_cruise * cruise_speed / (60 * 60 * 1000);
+	} 
+
 private:
 	std::string company_name;
 	double cruise_speed;					// in mph
@@ -110,6 +115,16 @@ public:
 		state = eVTOLState::UNKNOWN;
 	}
 
+	eVTOL(const eVTOL& source_evtol)
+	{
+		configuration = source_evtol.configuration;
+		charging_station = source_evtol.charging_station;
+		total_flight_time = source_evtol.total_flight_time;
+		total_charge_time = source_evtol.total_charge_time;
+		current_charge = source_evtol.current_charge;
+		state = source_evtol.state;
+	}
+
 	void begin() override
 	{
 		state = eVTOLState::FLYING;
@@ -120,7 +135,7 @@ public:
 		if (state == eVTOLState::FLYING)
 		{
 			total_flight_time += (cur_time - prev_time);
-			current_charge -= configuration.charge_rate() * (cur_time - prev_time);
+			current_charge -= energy_use_milliseconds() * (cur_time - prev_time);
 			// if low on battery charge, plug into charging station
 			if (percent_charge_remaining() < 0.5)
 			{
@@ -128,6 +143,7 @@ public:
 				if (charging_station)
 				{
 					charging_station->addDevice(this);
+					//std::cout << std::endl << "start charging " << configuration.get_company_name() << " " << (cur_time / (1000 * 60)) << std::endl;
 				}
 			}
 		}
@@ -144,6 +160,7 @@ public:
 			// oops, something went wrong
 			throw std::logic_error("VTOL in a bad state.");
 		}
+		//std::cout << cur_time << "  " << (state == eVTOLState::FLYING ? "FLYING" : "CHARGING") << std::endl;
 	}
 
 	// charge is in kWh
@@ -164,17 +181,23 @@ public:
 		return current_charge / configuration.get_battery_capacity() * 100.0;
 	}
 
-	// returns the charge rate in kWh / s
+	// returns the charge rate in kWh / ms
 	double chargeRate() override
 	{
 		return configuration.charge_rate();
+	}
+
+	// returns the cruising speed energy use in kWh / ms
+	double energy_use_milliseconds()
+	{
+		return configuration.energy_use_milliseconds();
 	}
 
 	eVTOLState get_state() { return state; }
 
 	size_t get_total_flight_time() { return total_flight_time; }
 
-	size_t get_total_charge_time() { return total_flight_time; }
+	size_t get_total_charge_time() { return total_charge_time; }
 
 	double get_current_charge() { return current_charge; }
 
@@ -236,6 +259,8 @@ void test_eVTOL()
 	cout << vtol.get_configuration().get_company_name() << endl;
 	cout << (vtol.get_state() == eVTOLState::UNKNOWN) << endl;
 	cout << vtol.percent_charge_remaining() << endl;
+	cout << vtol.chargeRate() << endl;
+	cout << vtol.energy_use_milliseconds() << endl;
 
 	vtol.begin();
 	cout << (vtol.get_state() == eVTOLState::FLYING) << endl;

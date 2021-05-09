@@ -7,7 +7,7 @@
 
 
 // maintains a list of prototype eVTOLs
-// returns a copy of one selected at random as a factory operation
+// returns a pointer to a heap allocated copy of one selected at random 
 class eVTOLFactory
 {
 public:
@@ -23,11 +23,12 @@ public:
 	}
 
 	// pick randomly one of the prototypes and return a copy of it
-	eVTOL create_eVTOL()
+	eVTOL* create_eVTOL()
 	{
-		std::uniform_int_distribution<int> uniform_distr(0, prototypes.size()-1);  // [0,5]
+		std::uniform_int_distribution<int> uniform_distr(0, prototypes.size()-1);  // [0,size-1]
 		int index = uniform_distr(random_engine);
-		return prototypes[index];
+		eVTOL* evtol = new eVTOL(prototypes[index]);
+		return evtol;
 	}
 
 private:
@@ -50,7 +51,7 @@ void test_eVTOLFactory()
 
 	for (int i = 0; i < 20; i++)
 	{
-		cout << factory.create_eVTOL().get_configuration().get_company_name() << endl;
+		cout << factory.create_eVTOL()->get_configuration().get_company_name() << endl;
 	}
 	
 }

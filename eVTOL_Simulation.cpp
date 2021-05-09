@@ -1,14 +1,13 @@
 
 
 #include <iostream>
-#include "evtol.h"
-//#include "sim_timer.h"
+#include "charge_station.h"
 
 
 
 int main()
 {
-	test_eVTOL();
+	test_ChargingStation();
 
 } 
 

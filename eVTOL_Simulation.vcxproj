@@ -142,6 +142,7 @@
     <ClCompile Include="eVTOL_Simulation.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="charge_station.h" />
     <ClInclude Include="evtol.h" />
     <ClInclude Include="sim_timer.h" />
     <ClInclude Include="sim_types.h" />

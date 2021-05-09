@@ -11,11 +11,11 @@
 // Runs for a predetermined amount of simulation time.
 // Runs at a configured time compression ratio of simulation time to real time.
 // Fires off an event at each timestep by calling a function with signature:
-//   void(unsigned long long prev_time, unsigned long long cur_time)
+//     void(size_t prev_time, size_t cur_time)
 // where both arguments are the time since start of simulation as measured in milliseconds
 // prev_time is provided so client code can calculate a change in time if necessary
 // Usage:
-//     auto event_handler = [](unsigned long long prev_time, unsigned long long cur_time) {};
+//     auto event_handler = [](size_t prev_time, size_t cur_time) {};
 //     SimulationEventTimer timer(1000, event_handler, 1, 1);
 //     timer.start();
 class SimulationEventTimer
@@ -62,14 +62,16 @@ public:
 	}
 
 private:
-	std::function<void(unsigned long long, unsigned long long)> timestep_event;
+	std::function<void(unsigned long long, unsigned long long)> timestep_event;  // function that gets called at each timestep
 	size_t simulation_to_real_time;  // how many units of simulation time passes for every 1 unit of real time
 	size_t total_simulation_time_minutes; // total simulation time in minutes
 	size_t timestep_size_milliseconds; // time between timesteps in milliseconds of simulation time
 };
 
 
-void test()
+
+
+void test_SimulationEventTimer()
 {
 	using namespace std;
 	auto event_handler = [](unsigned long long prev_time, unsigned long long cur_time) {

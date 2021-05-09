@@ -13,7 +13,7 @@
 // Fires off an event at each timestep by calling a function with signature:
 //   void(unsigned long long prev_time, unsigned long long cur_time)
 // where both arguments are the time since start of simulation as measured in milliseconds
-// pre_time is provided so client code can calculate a change in time if necessary
+// prev_time is provided so client code can calculate a change in time if necessary
 // Usage:
 //     auto event_handler = [](unsigned long long prev_time, unsigned long long cur_time) {};
 //     SimulationEventTimer timer(1000, event_handler, 1, 1);

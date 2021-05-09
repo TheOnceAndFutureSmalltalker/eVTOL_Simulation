@@ -142,7 +142,9 @@
     <ClCompile Include="eVTOL_Simulation.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="evtol.h" />
     <ClInclude Include="sim_timer.h" />
+    <ClInclude Include="sim_types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

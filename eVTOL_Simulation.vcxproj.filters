@@ -23,5 +23,11 @@
     <ClInclude Include="sim_timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sim_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="evtol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

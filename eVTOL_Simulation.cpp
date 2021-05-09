@@ -1,13 +1,15 @@
 
 
 #include <iostream>
-#include "charge_station.h"
+#include "evtol_factory.h"
 
 
 
 int main()
 {
-	test_ChargingStation();
+	test_eVTOLFactory();
+
+
 
 } 
 

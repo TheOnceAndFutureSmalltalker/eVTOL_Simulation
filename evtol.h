@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "sim_types.h"
+#include "charge_station.h"
 
 
 // Describes the configuration of an eVTOL
@@ -99,9 +100,10 @@ enum class eVTOLState
 class eVTOL : public ISimulationAgent, public IChargeableDevice
 {
 public:
-	eVTOL(const eVTOLConfiguration& config)
+	eVTOL(const eVTOLConfiguration& config, ChargingStation* charging_station)
 	{
 		configuration = config;
+		this->charging_station = charging_station;
 		total_flight_time = 0.0;
 		total_charge_time = 0.0;
 		current_charge = configuration.get_battery_capacity();
@@ -119,10 +121,14 @@ public:
 		{
 			total_flight_time += (cur_time - prev_time);
 			current_charge -= configuration.charge_rate() * (cur_time - prev_time);
+			// if low on battery charge, plug into charging station
 			if (percent_charge_remaining() < 0.5)
 			{
 				state = eVTOLState::CHARGING;
-				// plug in to the charger
+				if (charging_station)
+				{
+					charging_station->addDevice(this);
+				}
 			}
 		}
 		else if (state == eVTOLState::CHARGING)
@@ -180,6 +186,7 @@ private:
 	size_t total_charge_time;  // in milliseconds
 	double current_charge;
 	eVTOLState state;
+	ChargingStation* charging_station; // where eVTOLs get their batteries recharged
 };
 
 
@@ -224,7 +231,7 @@ void test_eVTOL()
 	using namespace std;
 
 	eVTOLConfiguration vtol_config("Alpha", 120, 320, 0.6, 1.6, 4, 0.25);
-	eVTOL vtol(vtol_config);
+	eVTOL vtol(vtol_config, nullptr);
 
 	cout << vtol.get_configuration().get_company_name() << endl;
 	cout << (vtol.get_state() == eVTOLState::UNKNOWN) << endl;

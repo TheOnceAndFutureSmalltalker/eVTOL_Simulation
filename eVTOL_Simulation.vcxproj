@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClInclude Include="charge_station.h" />
     <ClInclude Include="evtol.h" />
+    <ClInclude Include="evtol_factory.h" />
     <ClInclude Include="sim_timer.h" />
     <ClInclude Include="sim_types.h" />
   </ItemGroup>

@@ -213,6 +213,17 @@ public:
 		return configuration.get_company_name();
 	}
 
+	size_t get_passenger_count()
+	{
+		return configuration.get_passenger_count();
+	}
+
+	size_t get_cruise_speed()
+	{
+		return configuration.get_cruise_speed();
+	}
+
+
 	eVTOLState get_state() { return state; }
 
 	size_t get_total_flight_time() { return total_flight_time; }
@@ -222,6 +233,8 @@ public:
 	size_t get_total_wait_time() { return total_wait_time; }
 
 	double get_current_charge() { return current_charge; }
+
+	double get_faults() { return total_flight_time / (1000.0 * 60 * 60) * configuration.get_prob_fault_per_hour(); }
 
 	eVTOLConfiguration get_configuration() { return configuration; }
 

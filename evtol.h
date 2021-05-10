@@ -1,4 +1,5 @@
-#pragma once
+#ifndef EVTOL
+#define EVTOL
 
 #include <iostream>
 #include <string>
@@ -10,7 +11,8 @@
 
 // Describes the configuration of an eVTOL
 // Validates all of the entries.
-// Provides some simple calculations for compound properties
+// Provides some simple calculations for compound properties.
+// Provides following configuration values:
 //   company_name
 //   cruise_speed in mph
 //   battery_capacity in kWh
@@ -21,19 +23,19 @@
 //
 // Usage:
 //    eVTOLConfiguration vtol_config("Alpha", 120, 320, 0.6, 1.6, 4, 0.25);
-//    int num_passengers = vtol_config.get_passenger_count();
-//    double charge_rate = vtol_config.charge_rate();
+//    int num_passengers = vtol_config.passenger_count();
+//    double charge_rate = vtol_config.chargeRate();
 struct eVTOLConfiguration
 {
 	eVTOLConfiguration() {
-		company_name = "unknonw";
-		cruise_speed = 1;
-		battery_capacity = 1;
-		time_to_charge = 1;
-		energy_use_at_cruise = 1;
-		passenger_count = 1;
-		battery_capacity = 1;
-		prob_fault_per_hour = 1.0;
+		company_name_ = "unknonw";
+		cruise_speed_ = 1;
+		battery_capacity_ = 1;
+		time_to_charge_ = 1;
+		energy_use_at_cruise_ = 1;
+		passenger_count_ = 1;
+		battery_capacity_ = 1;
+		prob_fault_per_hour_ = 1.0;
 	}
 	eVTOLConfiguration(std::string company_name, double cruise_speed, double battery_capacity,
 		double time_to_charge, double energy_use_at_cruise, size_t passenger_count,
@@ -47,119 +49,118 @@ struct eVTOLConfiguration
 		if (passenger_count <= 0) throw std::invalid_argument("passenger_count must be a positive number.");
 		if (prob_fault_per_hour < 0.0 || prob_fault_per_hour > 1.0) throw std::invalid_argument("prob_fault_per_hour must be in [0.0, 1.0].");
 
-		this->company_name = company_name;
-		this->cruise_speed = cruise_speed;
-		this->battery_capacity = battery_capacity;
-		this->time_to_charge = time_to_charge;
-		this->energy_use_at_cruise = energy_use_at_cruise;
-		this->passenger_count = passenger_count;
-		this->battery_capacity = battery_capacity;
-		this->prob_fault_per_hour = prob_fault_per_hour;
+		company_name_ = company_name;
+		cruise_speed_ = cruise_speed;
+		battery_capacity_ = battery_capacity;
+		time_to_charge_ = time_to_charge;
+		energy_use_at_cruise_ = energy_use_at_cruise;
+		passenger_count_ = passenger_count;
+		battery_capacity_ = battery_capacity;
+		prob_fault_per_hour_ = prob_fault_per_hour;
 	}
 
-	std::string get_company_name() { return company_name; }
+	std::string company_name() { return company_name_; }
 
-	double get_cruise_speed() { return cruise_speed; }
+	double cruise_speed() { return cruise_speed_; }
 
-	double get_battery_capacity() { return battery_capacity; }
+	double battery_capacity() { return battery_capacity_; }
 
-	double get_time_to_charge() { return time_to_charge; }
+	double time_to_charge() { return time_to_charge_; }
 
-	double get_energy_use_at_cruise() { return energy_use_at_cruise; }
+	double energy_use_at_cruise() { return energy_use_at_cruise_; }
 
-	size_t get_passenger_count() { return passenger_count; }
+	size_t passenger_count() { return passenger_count_; }
 
-	double get_prob_fault_per_hour() { return prob_fault_per_hour; }
+	double prob_fault_per_hour() { return prob_fault_per_hour_; }
 
 	// returns rate of charge in kWh / ms
-	double charge_rate()
+	double chargeRate()
 	{
-		return battery_capacity / (time_to_charge * 60 * 60 * 1000); // converting hours to milliseconds
+		return battery_capacity_ / (time_to_charge_ * 60.0 * 60.0 * 1000.0); // converting hours to milliseconds
 	}
 
-	double energy_use_milliseconds()
+	double energyUsePerMillisecond()
 	{
-		return energy_use_at_cruise * cruise_speed / (60 * 60 * 1000);
+		return energy_use_at_cruise_ * cruise_speed_ / (60.0 * 60.0 * 1000.0);
 	} 
 
 private:
-	std::string company_name;
-	double cruise_speed;					// in mph
-	double battery_capacity;			// in kWh
-	double time_to_charge;				// in hours
-	double energy_use_at_cruise;	// in kWh/mile
-	size_t passenger_count;
-	double prob_fault_per_hour;  
+	std::string company_name_;
+	double cruise_speed_;					// in mph
+	double battery_capacity_;			// in kWh
+	double time_to_charge_;				// in hours
+	double energy_use_at_cruise_;	// in kWh/mile
+	size_t passenger_count_;
+	double prob_fault_per_hour_;  
 };
 
 
 // describes possible states of an eVTOL
 enum class eVTOLState
 {
-	UNKNOWN,
+	UNKNOWN,   
 	FLYING,
 	CHARGING,
 	WAITING
 };
 
 
-class eVTOL : public ISimulationAgent, public IChargeableDevice
+class eVTOL : public SimulationAgent, public ChargeableDevice
 {
 public:
 	eVTOL(const eVTOLConfiguration& config, ChargingStation* charging_station)
 	{
-		configuration = config;
-		this->charging_station = charging_station;
-		total_flight_time = 0.0;
-		total_charge_time = 0.0;
-		total_wait_time = 0.0;
-		current_charge = configuration.get_battery_capacity();
-		state = eVTOLState::UNKNOWN;
+		configuration_ = config;
+		this->charging_station_ = charging_station;
+		total_flight_time_ = 0.0;
+		total_charge_time_ = 0.0;
+		total_wait_time_ = 0.0;
+		current_charge_ = configuration_.battery_capacity();
+		state_ = eVTOLState::UNKNOWN;
 	}
 
 	eVTOL(const eVTOL& source_evtol)
 	{
-		configuration = source_evtol.configuration;
-		charging_station = source_evtol.charging_station;
-		total_flight_time = source_evtol.total_flight_time;
-		total_charge_time = source_evtol.total_charge_time;
-		total_wait_time = source_evtol.total_wait_time;
-		current_charge = source_evtol.current_charge;
-		state = source_evtol.state;
+		configuration_ = source_evtol.configuration_;
+		charging_station_ = source_evtol.charging_station_;
+		total_flight_time_ = source_evtol.total_flight_time_;
+		total_charge_time_ = source_evtol.total_charge_time_;
+		total_wait_time_ = source_evtol.total_wait_time_;
+		current_charge_ = source_evtol.current_charge_;
+		state_ = source_evtol.state_;
 	}
 
 	void begin() override
 	{
-		state = eVTOLState::FLYING;
+		state_ = eVTOLState::FLYING;
 	}
 
-	void timestep_update(size_t prev_time, size_t cur_time) override
+	void timestepUpdate(size_t prev_time, size_t cur_time) override
 	{
-		if (state == eVTOLState::FLYING)
+		if (state_ == eVTOLState::FLYING)
 		{
-			total_flight_time += (cur_time - prev_time);
-			current_charge -= energy_use_milliseconds() * (cur_time - prev_time);
+			total_flight_time_ += (cur_time - prev_time);
+			current_charge_ -= energyUsePerMillisecond() * (cur_time - prev_time);
 			// if low on battery charge, plug into charging station
-			if (percent_charge_remaining() < 0.5)
+			if (percentChargeRemaining() < 0.5)
 			{
-				state = eVTOLState::WAITING;
-				if (charging_station)
+				state_ = eVTOLState::WAITING;
+				if (charging_station_)
 				{
-					charging_station->addDevice(this);
-					//std::cout << std::endl << "start charging " << configuration.get_company_name() << " " << (cur_time / (1000 * 60)) << std::endl;
+					charging_station_->addDevice(this);
 				}
 			}
 		}
-		else if (state == eVTOLState::WAITING)
+		else if (state_ == eVTOLState::WAITING)
 		{
-			total_wait_time += (cur_time - prev_time);
+			total_wait_time_ += (cur_time - prev_time);
 		}
-		else if (state == eVTOLState::CHARGING)
+		else if (state_ == eVTOLState::CHARGING)
 		{
-			total_charge_time += (cur_time - prev_time);
+			total_charge_time_ += (cur_time - prev_time);
 			if (hasFullCharge())
 			{
-				state = eVTOLState::FLYING;
+				state_ = eVTOLState::FLYING;
 			}
 		}
 		else
@@ -167,85 +168,83 @@ public:
 			// oops, something went wrong
 			throw std::logic_error("VTOL in a bad state.");
 		}
-		//std::cout << cur_time << "  " << (state == eVTOLState::FLYING ? "FLYING" : "CHARGING") << std::endl;
 	}
 
 	// charge is in kWh
 	void addCharge(double charge) override
 	{
-		current_charge += charge;
-		current_charge = std::min(current_charge, configuration.get_battery_capacity());
+		current_charge_ += charge;
+		current_charge_ = std::min(current_charge_, configuration_.battery_capacity());
 		if (hasFullCharge())
 		{
-			state = eVTOLState::FLYING;
+			state_ = eVTOLState::FLYING;
 		}
 		else
 		{
-			state = eVTOLState::CHARGING;
+			state_ = eVTOLState::CHARGING;
 		}
 	}
 
 	bool hasFullCharge() override
 	{
-		return current_charge == configuration.get_battery_capacity();
+		return current_charge_ == configuration_.battery_capacity();
 	}
 
 	// return amount of charge remaining as a percent of max charge
-	double percent_charge_remaining()
+	double percentChargeRemaining()
 	{
-		return current_charge / configuration.get_battery_capacity() * 100.0;
+		return current_charge_ / configuration_.battery_capacity() * 100.0;
 	}
 
 	// returns the charge rate in kWh / ms
 	double chargeRate() override
 	{
-		return configuration.charge_rate();
+		return configuration_.chargeRate();
 	}
 
 	// returns the cruising speed energy use in kWh / ms
-	double energy_use_milliseconds()
+	double energyUsePerMillisecond()
 	{
-		return configuration.energy_use_milliseconds();
+		return configuration_.energyUsePerMillisecond();
 	}
 
-	std::string get_company_name()
+	std::string company_name()
 	{
-		return configuration.get_company_name();
+		return configuration_.company_name();
 	}
 
-	size_t get_passenger_count()
+	size_t passenger_count()
 	{
-		return configuration.get_passenger_count();
+		return configuration_.passenger_count();
 	}
 
-	size_t get_cruise_speed()
+	size_t cruise_speed()
 	{
-		return configuration.get_cruise_speed();
+		return configuration_.cruise_speed();
 	}
 
+	eVTOLState state() { return state_; }
 
-	eVTOLState get_state() { return state; }
+	size_t total_flight_time() { return total_flight_time_; }
 
-	size_t get_total_flight_time() { return total_flight_time; }
+	size_t total_charge_time() { return total_charge_time_; }
 
-	size_t get_total_charge_time() { return total_charge_time; }
+	size_t total_wait_time() { return total_wait_time_; }
 
-	size_t get_total_wait_time() { return total_wait_time; }
+	double current_charge() { return current_charge_; }
 
-	double get_current_charge() { return current_charge; }
+	double faults() { return total_flight_time_ / (1000.0 * 60 * 60) * configuration_.prob_fault_per_hour(); }
 
-	double get_faults() { return total_flight_time / (1000.0 * 60 * 60) * configuration.get_prob_fault_per_hour(); }
-
-	eVTOLConfiguration get_configuration() { return configuration; }
+	eVTOLConfiguration configuration() { return configuration_; }
 
 private:
-	eVTOLConfiguration configuration;
-	size_t total_flight_time;  // in milliseconds
-	size_t total_charge_time;  // in milliseconds
-	size_t total_wait_time;    // in milliseconds
-	double current_charge;
-	eVTOLState state;
-	ChargingStation* charging_station; // where eVTOLs get their batteries recharged
+	eVTOLConfiguration configuration_;
+	size_t total_flight_time_;  // in milliseconds
+	size_t total_charge_time_;  // in milliseconds
+	size_t total_wait_time_;    // in milliseconds
+	double current_charge_;     // in kWh
+	eVTOLState state_;
+	ChargingStation* charging_station_; // where eVTOLs get their batteries recharged
 };
 
 
@@ -274,14 +273,14 @@ void test_eVTOLConfiguration()
 
 	eVTOLConfiguration vtol_config("Alpha", 120, 320, 0.6, 1.6, 4, 0.25);
 
-	cout << vtol_config.get_company_name() << "  ";
-	cout << vtol_config.get_cruise_speed() << "  ";
-	cout << vtol_config.get_battery_capacity() << " ";
-	cout << vtol_config.get_time_to_charge() << "  ";
-	cout << vtol_config.get_energy_use_at_cruise() << "  ";
-	cout << vtol_config.get_passenger_count() << "  ";
-	cout << vtol_config.get_prob_fault_per_hour() << " ";
-	cout << vtol_config.charge_rate();
+	cout << vtol_config.company_name() << "  ";
+	cout << vtol_config.cruise_speed() << "  ";
+	cout << vtol_config.battery_capacity() << " ";
+	cout << vtol_config.time_to_charge() << "  ";
+	cout << vtol_config.energy_use_at_cruise() << "  ";
+	cout << vtol_config.passenger_count() << "  ";
+	cout << vtol_config.prob_fault_per_hour() << " ";
+	cout << vtol_config.chargeRate();
 }
 
 
@@ -292,21 +291,24 @@ void test_eVTOL()
 	eVTOLConfiguration vtol_config("Alpha", 120, 320, 0.6, 1.6, 4, 0.25);
 	eVTOL vtol(vtol_config, nullptr);
 
-	cout << vtol.get_company_name() << endl;
-	cout << (vtol.get_state() == eVTOLState::UNKNOWN) << endl;
-	cout << vtol.percent_charge_remaining() << endl;
+	cout << vtol.company_name() << endl;
+	cout << (vtol.state() == eVTOLState::UNKNOWN) << endl;
+	cout << vtol.percentChargeRemaining() << endl;
 	cout << vtol.chargeRate() << endl;
-	cout << vtol.energy_use_milliseconds() << endl;
+	cout << vtol.energyUsePerMillisecond() << endl;
 
 	vtol.begin();
-	cout << (vtol.get_state() == eVTOLState::FLYING) << endl;
-	vtol.timestep_update(0, 1000);
-	vtol.timestep_update(1000, 2000);
-	vtol.timestep_update(2000, 3000);
-	cout << (vtol.get_state() == eVTOLState::FLYING) << endl;
-	cout << vtol.percent_charge_remaining() << endl;
-	vtol.timestep_update(3000, 30000);
-	cout << vtol.percent_charge_remaining() << endl;
-	vtol.timestep_update(30000, 100000);
-	cout << vtol.percent_charge_remaining() << endl;
+	cout << (vtol.state() == eVTOLState::FLYING) << endl;
+	vtol.timestepUpdate(0, 1000);
+	vtol.timestepUpdate(1000, 2000);
+	vtol.timestepUpdate(2000, 3000);
+	cout << (vtol.state() == eVTOLState::FLYING) << endl;
+	cout << vtol.percentChargeRemaining() << endl;
+	vtol.timestepUpdate(3000, 30000);
+	cout << vtol.percentChargeRemaining() << endl;
+	vtol.timestepUpdate(30000, 100000);
+	cout << vtol.percentChargeRemaining() << endl;
 }
+
+
+#endif  // EVTOL

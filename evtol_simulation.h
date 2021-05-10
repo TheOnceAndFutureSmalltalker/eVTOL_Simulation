@@ -1,3 +1,5 @@
+#ifndef EVTOL_SIMULATION
+#define EVTOL_SIMULATION
 
 
 #include <iostream>
@@ -23,13 +25,13 @@
 #define SIMULATION_TIME_COMPRESSION 60
 #define TIMESTEP_IN_MILLISECONDS 1000
 
-// These are the eVTOL configurations.
+// These are the eVTOL configurations specified in the problem sheet.
 // TODO:  this should definitely go in a config file!!
-eVTOLConfiguration alpha_config("Alpha Company",     120, 320, 0.60, 1.6, 4, 0.25);
-eVTOLConfiguration beta_config("Beta Company",       100, 100, 0.20, 1.5, 5, 0.10);
+eVTOLConfiguration alpha_config("Alpha Company", 120, 320, 0.60, 1.6, 4, 0.25);
+eVTOLConfiguration beta_config("Beta Company", 100, 100, 0.20, 1.5, 5, 0.10);
 eVTOLConfiguration charlie_config("Charlie Company", 220, 320, 0.80, 2.2, 3, 0.05);
-eVTOLConfiguration delta_config("Delta Company",      90, 120, 0.62, 0.8, 2, 0.22);
-eVTOLConfiguration echo_config("Echo Company",        30, 150, 0.30, 5.8, 2, 0.61);
+eVTOLConfiguration delta_config("Delta Company", 90, 120, 0.62, 0.8, 2, 0.22);
+eVTOLConfiguration echo_config("Echo Company", 30, 150, 0.30, 5.8, 2, 0.61);
 
 
 
@@ -40,28 +42,28 @@ eVTOLConfiguration echo_config("Echo Company",        30, 150, 0.30, 5.8, 2, 0.6
 class eVTOLSimulation
 {
 public:
-	eVTOLSimulation() 
-	{ 
-		has_already_run = false; 
-		charging_station = nullptr;
+	eVTOLSimulation()
+	{
+		has_already_run_ = false;
+		charging_station_ = nullptr;
 	}
 
 	// constructs and runs the entire simulation
 	void run()
 	{
-		if(has_already_run) throw std::logic_error("Each instance of eVTOLSimulation can only run once.");
-		has_already_run = true;
+		if (has_already_run_) throw std::logic_error("Each instance of eVTOLSimulation can only run once.");
+		has_already_run_ = true;
 
 		// create the charging station
-		charging_station = new ChargingStation(MAX_NUMBER_CHARGING_STALLS);
-		
+		charging_station_ = new ChargingStation(MAX_NUMBER_CHARGING_STALLS);
+
 		// create the eVTOL factory and populate it with the eVTOL prototypes
 		eVTOLFactory factory;
-		factory.add_prototype(eVTOL(alpha_config, charging_station));
-		factory.add_prototype(eVTOL(beta_config, charging_station));
-		factory.add_prototype(eVTOL(charlie_config, charging_station));
-		factory.add_prototype(eVTOL(delta_config, charging_station));
-		factory.add_prototype(eVTOL(echo_config, charging_station));
+		factory.addPrototype(eVTOL(alpha_config, charging_station_));
+		factory.addPrototype(eVTOL(beta_config, charging_station_));
+		factory.addPrototype(eVTOL(charlie_config, charging_station_));
+		factory.addPrototype(eVTOL(delta_config, charging_station_));
+		factory.addPrototype(eVTOL(echo_config, charging_station_));
 
 		// create the population eVTOLs and make them agents of the simulation 
 		int num_evtols = TOTAL_NUMBER_EVTOLS;
@@ -69,18 +71,19 @@ public:
 		{
 			eVTOL* evtol = factory.create_eVTOL();
 			evtol->begin();
-			evtols.push_back(evtol);
+			evtols_.push_back(evtol);
 		}
+		charging_station_->begin();
 
 		// create the timer and timestep event handler
 		auto timestep_handler = [this](size_t prev_time, size_t cur_time) {
 			// simply forward the timestep event to each of the simulation agents - evtols and charging station
-			std::for_each(evtols.begin(), evtols.end(), [prev_time, cur_time](eVTOL* evtol) {
-				evtol->timestep_update(prev_time, cur_time);
+			std::for_each(evtols_.begin(), evtols_.end(), [prev_time, cur_time](eVTOL* evtol) {
+				evtol->timestepUpdate(prev_time, cur_time);
 				});
-			charging_station->timestep_update(prev_time, cur_time);
+			charging_station_->timestepUpdate(prev_time, cur_time);
 			// print dot every second in real time for user feedback
-			if (((cur_time / 1000) % SIMULATION_TIME_COMPRESSION) == 0) std::cout << "."; 
+			if (((cur_time / 1000) % SIMULATION_TIME_COMPRESSION) == 0) std::cout << ".";
 		};
 		SimulationEventTimer timer(TIMESTEP_IN_MILLISECONDS, timestep_handler, TOTAL_MINUTES_SIMULATION_TIME, SIMULATION_TIME_COMPRESSION);
 
@@ -91,45 +94,45 @@ public:
 	}
 
 
-	void print_results()
+	void printResults()
 	{
 		using namespace std;
 		cout << endl << endl << "******************************** R E S U L T S ********************************" << endl;
-		print_individual_results();
-		print_company_results();
+		printIndividualVTOLResults();
+		printCompanyGroupResults();
 	}
 
-	void print_individual_results()
+	void printIndividualVTOLResults()
 	{
 		using namespace std;
 		cout << endl << "Individual eVTOL Stats" << endl;
 		cout << setw(20) << "COMPANY" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << setw(10) << "WAIT" << setw(11) << "CHARGE" << endl;
 		cout << setw(20) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(10) << "TIME" << setw(11) << "REMAINING" << endl;
 		cout << setw(20) << "------------------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << setw(11) << "---------" << endl;
-		std::for_each(evtols.begin(), evtols.end(), [](eVTOL* evtol) {
-			cout << setw(20) << evtol->get_company_name();
+		std::for_each(evtols_.begin(), evtols_.end(), [](eVTOL* evtol) {
+			cout << setw(20) << evtol->company_name();
 			cout << fixed << setprecision(2);
-			cout << setw(10) << (evtol->get_total_flight_time() / (1000.0 * 60));
-			cout << setw(10) << (evtol->get_total_charge_time() / (1000.0 * 60));
-			cout << setw(10) << (evtol->get_total_wait_time() / (1000.0 * 60));
-			cout << setw(10) << evtol->percent_charge_remaining() << "%" << endl;
+			cout << setw(10) << (evtol->total_flight_time() / (1000.0 * 60));
+			cout << setw(10) << (evtol->total_charge_time() / (1000.0 * 60));
+			cout << setw(10) << (evtol->total_wait_time() / (1000.0 * 60));
+			cout << setw(10) << evtol->percentChargeRemaining() << "%" << endl;
 			});
 	}
 
-	void print_company_results()
+	void printCompanyGroupResults()
 	{
 		using namespace std;
 		cout << endl << "Company Stats" << endl;
 		cout << setw(20) << "COMPANY" << setw(10) << "COUNT" << setw(10) << "AVERAGE" << setw(10) << "AVERAGE" << setw(10) << "AVERAGE" << setw(10) << "MAX" << setw(10) << "TOTAL" << endl;
-		cout << setw(20) << "" << setw(10) << "" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << setw(10) << "WAIT" << setw(10) << "NUMBER" << setw(10) << "PASSENGR" << endl;
-		cout << setw(20) << "" << setw(10) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(10) << "TIME" << setw(10) << "FAULTS" << setw(10) << "MILES" << endl;
+		cout << setw(20) << "" << setw(10) << "" << setw(10) << "FLT TIME" << setw(10) << "CHG TIME" << setw(10) << "WAT TIME" << setw(10) << "NUMBER" << setw(10) << "PASSENGR" << endl;
+		cout << setw(20) << "" << setw(10) << "" << setw(10) << "MINUTES" << setw(10) << "MINUTES" << setw(10) << "MINUTES" << setw(10) << "FAULTS" << setw(10) << "MILES" << endl;
 		cout << setw(20) << "------------------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << endl;
-		
-		// get a list of companies
+
+		// get a list of companies from evtols list
 		std::set<std::string> companies;
-		for(auto evtol : evtols)
+		for (auto evtol : evtols_)
 		{
-			companies.insert(evtol->get_company_name());
+			companies.insert(evtol->company_name());
 		}
 
 		// for each company, calculate stats and print them out in one row
@@ -137,31 +140,31 @@ public:
 		{
 			// get all vtols for current company
 			std::vector<eVTOL*> company_evtols;
-			std::copy_if(evtols.begin(), evtols.end(), std::back_inserter(company_evtols), [company](eVTOL* evtol) {return evtol->get_company_name() == company; });
-			
+			std::copy_if(evtols_.begin(), evtols_.end(), std::back_inserter(company_evtols), [company](eVTOL* evtol) {return evtol->company_name() == company; });
+
 			// calculate average flight time in minutes
-			double avg_flight_time_minutes = std::accumulate(company_evtols.begin(), company_evtols.end(), 0.0, [](double total, eVTOL* evtol) { return total + evtol->get_total_flight_time() / (1000.0 * 60); });
+			double avg_flight_time_minutes = std::accumulate(company_evtols.begin(), company_evtols.end(), 0.0, [](double total, eVTOL* evtol) { return total + evtol->total_flight_time() / (1000.0 * 60); });
 			avg_flight_time_minutes /= company_evtols.size();
 
 			// calculate average charge time in minutes
-			double avg_charge_time_minutes = std::accumulate(company_evtols.begin(), company_evtols.end(), 0.0, [](double total, eVTOL* evtol) { return total + evtol->get_total_charge_time() / (1000.0 * 60); });
+			double avg_charge_time_minutes = std::accumulate(company_evtols.begin(), company_evtols.end(), 0.0, [](double total, eVTOL* evtol) { return total + evtol->total_charge_time() / (1000.0 * 60); });
 			avg_charge_time_minutes /= company_evtols.size();
 
 			// calculate averate wait time in minutes
-			double avg_wait_time_minutes = std::accumulate(company_evtols.begin(), company_evtols.end(), 0.0, [](double total, eVTOL* evtol) { return total + evtol->get_total_wait_time() / (1000.0 * 60); });
+			double avg_wait_time_minutes = std::accumulate(company_evtols.begin(), company_evtols.end(), 0.0, [](double total, eVTOL* evtol) { return total + evtol->total_wait_time() / (1000.0 * 60); });
 			avg_wait_time_minutes /= company_evtols.size();
 
 			// calculate max faults
 			std::vector<double> faults;
-			std::transform(company_evtols.begin(), company_evtols.end(), std::back_inserter(faults), [](eVTOL* evtol) { return evtol->get_faults(); });
+			std::transform(company_evtols.begin(), company_evtols.end(), std::back_inserter(faults), [](eVTOL* evtol) { return evtol->faults(); });
 			auto max_faults_itr = std::max_element(faults.begin(), faults.end());
 			double max_faults = *max_faults_itr;
-			
+
 			// calculate total passenger miles
-			size_t total_passenger_miles = std::accumulate(company_evtols.begin(), company_evtols.end(), 0, [](double total, eVTOL* evtol) { 
-				return total + (evtol->get_total_flight_time() / (1000.0 * 60 * 60) * evtol->get_cruise_speed() * evtol->get_passenger_count());
+			size_t total_passenger_miles = std::accumulate(company_evtols.begin(), company_evtols.end(), 0, [](double total, eVTOL* evtol) {
+				return total + (evtol->total_flight_time() / (1000.0 * 60 * 60) * evtol->cruise_speed() * evtol->passenger_count());
 				});
-			
+
 			// print out the current company's stats
 			cout << setw(20) << company;
 			cout << setw(10) << company_evtols.size();
@@ -178,24 +181,15 @@ public:
 
 	~eVTOLSimulation()
 	{
-		// destroy all of the heap allocated agents
-		std::for_each(evtols.begin(), evtols.end(), [](eVTOL* evtol) {delete evtol; });
+		// destroy all of the heap allocated simulation agents - the evtols and charging station
+		std::for_each(evtols_.begin(), evtols_.end(), [](eVTOL* evtol) {delete evtol; });
+		delete charging_station_;
 	}
 
 private:
-	std::vector<eVTOL*> evtols;
-	ChargingStation* charging_station;
-	bool has_already_run;
+	std::vector<eVTOL*> evtols_;
+	ChargingStation* charging_station_;
+	bool has_already_run_;
 };
 
-
-
-int main()
-{
-	eVTOLSimulation simulation;
-	simulation.run();
-	simulation.print_results();
-
-	//test_eVTOL();
-} 
-
+#endif  // EVTOL_SIMULATION

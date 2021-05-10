@@ -139,12 +139,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="eVTOL_Simulation.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="charge_station.h" />
     <ClInclude Include="evtol.h" />
     <ClInclude Include="evtol_factory.h" />
+    <ClInclude Include="evtol_simulation.h" />
     <ClInclude Include="sim_timer.h" />
     <ClInclude Include="sim_types.h" />
   </ItemGroup>

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CHARGE_STATION
+#define CHARGE_STATION
 
 #include <vector>
 #include <deque>
@@ -7,18 +8,17 @@
 
 
 
-// Models a charging station where eVTOLs can get their batteries recharged
-// the station has a fixed number of stalls for charging
-// others must queue up and wait in line for next available stall
-// a charging station is an ISimulationAgent and participates in a simulation
-// and therefor, updates its state at each timestep of the simulation
-
-class ChargingStation : public ISimulationAgent
+// Models a charging station where eVTOLs can get their batteries recharged.
+// The station has a fixed number of stalls for charging.  If all stalls are occupied,
+// others must queue up and wait in line for next available stall.
+// A charging station is a SimulationAgent and participates in a simulation
+// and therefore, updates its state at each timestep of the simulation.
+class ChargingStation : public SimulationAgent
 {
 public:
 	ChargingStation(size_t max_number_charging_stations)
 	{
-		this->max_number_charging_devices = max_number_charging_stations;
+		this->max_number_charging_devices_ = max_number_charging_stations;
 	}
 
 	void begin() override
@@ -26,50 +26,54 @@ public:
 		// no op
 	}
 
-	void timestep_update(size_t prev_time, size_t cur_time) override
+	void timestepUpdate(size_t prev_time, size_t cur_time) override
 	{
 		// update each device currently charging
-		std::for_each(devices_charging.begin(), 
-									devices_charging.end(), 
-									[prev_time, cur_time](IChargeableDevice* device) { 
-										device->addCharge(device->chargeRate() * (cur_time - prev_time)); 
-									}
-									);
-
-		// see if any device needs to come out of charging list
-		while (true)
+		for (auto device : devices_charging_)
 		{
-			auto itr = std::find_if(devices_charging.begin(), devices_charging.end(), [](IChargeableDevice* device) {return device->hasFullCharge(); });
-			if (itr == devices_charging.end()) break;
-			devices_charging.erase(itr);
+			device->addCharge(device->chargeRate() * (cur_time - prev_time));
 		}
 
-		// see if any devices are waiting and can go into the charging list
-		while (devices_charging.size() < max_number_charging_devices && devices_waiting.size() > 0)
+		// See if any devices currently charging are done charging
+		// and threfore need to come out of the devices_charging list 
+		while (true)
 		{
-			IChargeableDevice* device = devices_waiting.back();
-			devices_waiting.pop_back();
-			devices_charging.push_back(device);
+			auto itr = std::find_if(devices_charging_.begin(), devices_charging_.end(), 
+				[](ChargeableDevice* device) {return device->hasFullCharge(); });
+			if (itr == devices_charging_.end()) break;
+			devices_charging_.erase(itr);
+		}
+
+		// See if any devices are waiting for a charge stall and a charge stall is open.
+		// If so, pop the next waiting device and add it to the charging list.
+		while (devices_charging_.size() < max_number_charging_devices_ && devices_waiting_.size() > 0)
+		{
+			ChargeableDevice* device = devices_waiting_.back();
+			devices_waiting_.pop_back();
+			devices_charging_.push_back(device);
 		}
 	}
 
-	void addDevice(IChargeableDevice* chargeableDevice)
+	// A new chargeable device is entering the charging station.
+	// If there is an open stall, add it to the charging list.
+	// If not, add it to the waiting queue.
+	void addDevice(ChargeableDevice* chargeableDevice)
 	{
-		if (devices_charging.size() < max_number_charging_devices)
+		if (devices_charging_.size() < max_number_charging_devices_)
 		{
-			devices_charging.push_back(chargeableDevice);
+			devices_charging_.push_back(chargeableDevice);
 		}
 		else
 		{
 			// new devices enter the waiting queue at the front
-			devices_waiting.push_front(chargeableDevice);
+			devices_waiting_.push_front(chargeableDevice);
 		}
 	}
 
 private:
-	size_t max_number_charging_devices;
-	std::deque<IChargeableDevice*> devices_waiting;
-	std::vector<IChargeableDevice*> devices_charging;
+	size_t max_number_charging_devices_;
+	std::deque<ChargeableDevice*> devices_waiting_;
+	std::vector<ChargeableDevice*> devices_charging_;
 };
 
 
@@ -78,7 +82,7 @@ void test_ChargingStation()
 {
 	using namespace std;
 
-	class MockChargeableDevice : public IChargeableDevice
+	class MockChargeableDevice : public ChargeableDevice
 	{
 	public:
 		virtual void addCharge(double charge) override { total_charge += charge; }
@@ -96,13 +100,16 @@ void test_ChargingStation()
 	ChargingStation cs(2);
 	cs.begin();
 	cs.addDevice(&dev1);
-	cs.timestep_update(0, 1);
+	cs.timestepUpdate(0, 1);
 	cs.addDevice(&dev2);
-	cs.timestep_update(1, 2);
+	cs.timestepUpdate(1, 2);
 	cs.addDevice(&dev3);
-	cs.timestep_update(2, 3);
+	cs.timestepUpdate(2, 3);
 	cs.addDevice(&dev4);
-	cs.timestep_update(3, 4);
-	cs.timestep_update(4, 5);
+	cs.timestepUpdate(3, 4);
+	cs.timestepUpdate(4, 5);
 
 }
+
+
+#endif  // CHARGE_STATION

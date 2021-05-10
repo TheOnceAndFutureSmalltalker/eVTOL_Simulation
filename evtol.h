@@ -107,7 +107,21 @@ enum class eVTOLState
 	WAITING
 };
 
-
+// Simulates an eVTOL.
+// An eVTOLConfiguration describes the eVTOL.
+// Is a ChargeableDevice and can get its batteries recharged in a ChargingStation.
+// The ChargingStation is shared among all eVTOLs.
+// Is a SimulationAgent and receives timestep updates to update its internal state.
+// Can be in one of 3 states, FLYING, CHARGING, or WAITING.
+// Keeps track of total time spent in each of these states.
+// Additionally keeps track of total number of faults that occur while flying.
+// An eVTOL starts out with a full charge and in FLYING mode.
+// As it flies, it drains its battery.  Once it gets close to zero charge,
+// It enters the charging station.  If a charging bay is open, the eVTOL goes
+// into charging state, if all bays are occupied, it goes int WAITING mode.
+// Once fully charged, it goes back into FLYING mode.
+// The simulation is conducted in time units of milliseconds.
+// These values are converted to seconds, minutes, hours as needed.
 class eVTOL : public SimulationAgent, public ChargeableDevice
 {
 public:
@@ -239,13 +253,13 @@ public:
 		return current_charge_ / configuration_.battery_capacity() * 100.0;
 	}
 
-	// returns the charge rate in kWh / ms
+	// returns the charge rate in kWh / milliseconds
 	double chargeRate() override
 	{
 		return configuration_.chargeRate();
 	}
 
-	// returns the cruising speed energy use in kWh / ms
+	// returns the cruising speed energy used in kWh / milliseconds
 	double energyUsePerMillisecond()
 	{
 		return configuration_.energyUsePerMillisecond();

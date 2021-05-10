@@ -3,7 +3,7 @@
 
 
 // Any object that participates in a simulation by receiving timestep updates
-// so it can update its state.
+// so it can update its internal state.
 class SimulationAgent
 {
 public:
@@ -15,7 +15,7 @@ public:
 };
 
 
-// A device that can be charged at a charging station
+// A device that can be charged at a charging station.
 class ChargeableDevice
 {
 public:

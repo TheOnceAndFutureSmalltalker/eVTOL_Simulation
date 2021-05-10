@@ -8,7 +8,7 @@
 
 
 // Maintains a list of prototype eVTOLs.
-// Returns a pointer to a heap allocated copy of one of the prototypes selected at random .
+// Returns a pointer to a heap allocated copy of one of the prototypes selected at random.
 class eVTOLFactory
 {
 public:

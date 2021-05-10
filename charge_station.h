@@ -9,16 +9,16 @@
 
 
 // Models a charging station where eVTOLs can get their batteries recharged.
-// The station has a fixed number of stalls for charging.  If all stalls are occupied,
-// others must queue up and wait in line for next available stall.
+// The station has a fixed number of bays for charging.  If all charging bays are occupied,
+// an eVTOL must queue up and wait in line for next available charging bay.
 // A charging station is a SimulationAgent and participates in a simulation
 // and therefore, updates its state at each timestep of the simulation.
 class ChargingStation : public SimulationAgent
 {
 public:
-	ChargingStation(size_t max_number_charging_stations)
+	ChargingStation(size_t max_number_charging_devices)
 	{
-		this->max_number_charging_devices_ = max_number_charging_stations;
+		this->max_number_charging_devices_ = max_number_charging_devices;
 	}
 
 	void begin() override
@@ -35,7 +35,7 @@ public:
 		}
 
 		// See if any devices currently charging are done charging
-		// and threfore need to come out of the devices_charging list 
+		// and therefore need to come out of the devices_charging list 
 		while (true)
 		{
 			auto itr = std::find_if(devices_charging_.begin(), devices_charging_.end(), 
@@ -44,8 +44,8 @@ public:
 			devices_charging_.erase(itr);
 		}
 
-		// See if any devices are waiting for a charge stall and a charge stall is open.
-		// If so, pop the next waiting device and add it to the charging list.
+		// See if any devices are waiting for a charging bay and if a charge bay is available.
+		// If so, pop the next waiting device and add it to the charging devices list.
 		while (devices_charging_.size() < max_number_charging_devices_ && devices_waiting_.size() > 0)
 		{
 			ChargeableDevice* device = devices_waiting_.back();
@@ -55,7 +55,7 @@ public:
 	}
 
 	// A new chargeable device is entering the charging station.
-	// If there is an open stall, add it to the charging list.
+	// If there is an open charging bay, add it to the charging devices list.
 	// If not, add it to the waiting queue.
 	void addDevice(ChargeableDevice* chargeableDevice)
 	{

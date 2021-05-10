@@ -62,6 +62,11 @@ public:
 		}
 	}
 
+	double totalSimulationTimeInRealMinutes()
+	{
+		return total_simulation_time_minutes_ * 1.0 / simulation_to_real_time_;
+	}
+
 private:
 	std::function<void(unsigned long long, unsigned long long)> timestep_event_;  // function that gets called at each timestep
 	size_t simulation_to_real_time_;				// how many units of simulation time passes for every 1 unit of real time

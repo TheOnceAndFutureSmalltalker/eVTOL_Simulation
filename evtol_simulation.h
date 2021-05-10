@@ -21,7 +21,7 @@
 // As it stands, modifying the parameters of the simulation requires a recompile.
 #define TOTAL_NUMBER_EVTOLS 20
 #define MAX_NUMBER_CHARGING_STALLS 3
-#define TOTAL_MINUTES_SIMULATION_TIME 60
+#define TOTAL_MINUTES_SIMULATION_TIME 180
 #define SIMULATION_TIME_COMPRESSION 60
 #define TIMESTEP_IN_MILLISECONDS 1000
 
@@ -83,12 +83,18 @@ public:
 				});
 			charging_station_->timestepUpdate(prev_time, cur_time);
 			// print dot every second in real time for user feedback
-			if (((cur_time / 1000) % SIMULATION_TIME_COMPRESSION) == 0) std::cout << ".";
+			if (((cur_time / 1000) % SIMULATION_TIME_COMPRESSION) == 0) 
+			{
+				std::cout << ".";
+				std::cout.flush();
+			}
 		};
 		SimulationEventTimer timer(TIMESTEP_IN_MILLISECONDS, timestep_handler, TOTAL_MINUTES_SIMULATION_TIME, SIMULATION_TIME_COMPRESSION);
 
 		// start the simulation
 		std::cout << std::endl << "Starting Simulation" << std::endl;
+		std::cout << std::fixed << std::setprecision(2);
+		std::cout << "This will take approximately " << timer.totalSimulationTimeInRealMinutes() << " minutes." << std::endl;
 		timer.start();
 		std::cout << std::endl << "Simulation Finished" << std::endl;
 	}
@@ -98,8 +104,22 @@ public:
 	{
 		using namespace std;
 		cout << endl << endl << "******************************** R E S U L T S ********************************" << endl;
+		printSimulationParameters();
 		printIndividualVTOLResults();
 		printCompanyGroupResults();
+		cout << endl;
+	}
+
+	void printSimulationParameters()
+	{
+		using namespace std;
+		cout << endl << "Simulation Parameters" << endl;
+		cout << "  Number of eVTOLS:            " << TOTAL_NUMBER_EVTOLS << endl;
+		cout << "  Number of Charging Bays:     " << MAX_NUMBER_CHARGING_STALLS << endl;
+		cout << "  Total Simulation Time:       " << TOTAL_MINUTES_SIMULATION_TIME << " minutes" << endl;
+		cout << "  Simulation Time Compression: " << SIMULATION_TIME_COMPRESSION << endl;
+		cout << "  Timestep Interval:           " << TIMESTEP_IN_MILLISECONDS << " milliseconds" << endl;
+
 	}
 
 	void printIndividualVTOLResults()

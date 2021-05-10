@@ -242,3 +242,15 @@ _Pvt_Extensions
 
 # FAKE - F# Make
 .fake/
+
+
+# VS COde
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/

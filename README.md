@@ -10,6 +10,7 @@ Simulates several models of VTOLs during operation to capture a variety of perfo
 $> git clone https://github.com/TheOnceAndFutureSmalltalker/eVTOL_Simulation.git
 
 $> cd eVTOL_Simulation
+
 Open File Browser on this directory
 
 Double click on the file eVTOL_Simulation.sln

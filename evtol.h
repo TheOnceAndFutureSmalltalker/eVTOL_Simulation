@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
+#include <random>
+#include <chrono>
 
 #include "sim_types.h"
 #include "charge_station.h"
@@ -73,12 +75,13 @@ struct eVTOLConfiguration
 
 	double prob_fault_per_hour() { return prob_fault_per_hour_; }
 
-	// returns rate of charge in kWh / ms
+	// returns rate of charge for the batteries in kWh / ms
 	double chargeRate()
 	{
 		return battery_capacity_ / (time_to_charge_ * 60.0 * 60.0 * 1000.0); // converting hours to milliseconds
 	}
 
+	// returns rate of energy consumption in kWh per millisecond when flying at cruise speed
 	double energyUsePerMillisecond()
 	{
 		return energy_use_at_cruise_ * cruise_speed_ / (60.0 * 60.0 * 1000.0);
@@ -115,8 +118,11 @@ public:
 		total_flight_time_ = 0.0;
 		total_charge_time_ = 0.0;
 		total_wait_time_ = 0.0;
+		number_of_faults_ = 0;
 		current_charge_ = configuration_.battery_capacity();
 		state_ = eVTOLState::UNKNOWN;
+		unsigned seed = std::chrono::steady_clock::now().time_since_epoch().count();
+		random_engine_ = std::default_random_engine(seed);
 	}
 
 	eVTOL(const eVTOL& source_evtol)
@@ -127,7 +133,11 @@ public:
 		total_charge_time_ = source_evtol.total_charge_time_;
 		total_wait_time_ = source_evtol.total_wait_time_;
 		current_charge_ = source_evtol.current_charge_;
+		number_of_faults_ = source_evtol.number_of_faults_;
 		state_ = source_evtol.state_;
+		// don't copy the random engine, just create a new one
+		unsigned seed = std::chrono::steady_clock::now().time_since_epoch().count();
+		random_engine_ = std::default_random_engine(seed);
 	}
 
 	void begin() override
@@ -141,6 +151,7 @@ public:
 		{
 			total_flight_time_ += (cur_time - prev_time);
 			current_charge_ -= energyUsePerMillisecond() * (cur_time - prev_time);
+			number_of_faults_ += didFaultOccur(cur_time - prev_time);
 			// if low on battery charge, plug into charging station
 			if (percentChargeRemaining() < 0.5)
 			{
@@ -170,6 +181,17 @@ public:
 		}
 	}
 
+	// returns true if a fault occured during the time interval specified
+	bool didFaultOccur(size_t interval_milliseconds)
+	{
+		double prob_fault_per_millisecond = configuration_.prob_fault_per_hour() / (60.0 * 60.0 * 1000.0);
+		double prob_fault_during_interval = prob_fault_per_millisecond * interval_milliseconds;
+		std::uniform_real_distribution<double> dist(0.0, 1.0);
+		double observation = dist(random_engine_);
+		bool fault_occured = observation < prob_fault_during_interval;
+		return fault_occured;
+	}
+
 	// charge is in kWh
 	void addCharge(double charge) override
 	{
@@ -188,6 +210,27 @@ public:
 	bool hasFullCharge() override
 	{
 		return current_charge_ == configuration_.battery_capacity();
+	}
+
+	// returns the name of the state
+	std::string stateName()
+	{
+		if (state_ == eVTOLState::FLYING)
+		{
+			return "FLYING";
+		}
+		else if (state_ == eVTOLState::CHARGING)
+		{
+			return "CHARGING";
+		}
+		else if (state_ == eVTOLState::WAITING)
+		{
+			return "WAITING";
+		}
+		else
+		{
+			return "UNKNOWN";
+		}
 	}
 
 	// return amount of charge remaining as a percent of max charge
@@ -233,7 +276,7 @@ public:
 
 	double current_charge() { return current_charge_; }
 
-	double faults() { return total_flight_time_ / (1000.0 * 60 * 60) * configuration_.prob_fault_per_hour(); }
+	size_t number_of_faults() {	return number_of_faults_; }
 
 	eVTOLConfiguration configuration() { return configuration_; }
 
@@ -243,8 +286,10 @@ private:
 	size_t total_charge_time_;  // in milliseconds
 	size_t total_wait_time_;    // in milliseconds
 	double current_charge_;     // in kWh
+	size_t number_of_faults_;
 	eVTOLState state_;
 	ChargingStation* charging_station_; // where eVTOLs get their batteries recharged
+	std::default_random_engine random_engine_;
 };
 
 

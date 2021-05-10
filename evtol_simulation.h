@@ -21,7 +21,7 @@
 // As it stands, modifying the parameters of the simulation requires a recompile.
 #define TOTAL_NUMBER_EVTOLS 20
 #define MAX_NUMBER_CHARGING_STALLS 3
-#define TOTAL_MINUTES_SIMULATION_TIME 180
+#define TOTAL_MINUTES_SIMULATION_TIME 60
 #define SIMULATION_TIME_COMPRESSION 60
 #define TIMESTEP_IN_MILLISECONDS 1000
 
@@ -106,15 +106,16 @@ public:
 	{
 		using namespace std;
 		cout << endl << "Individual eVTOL Stats" << endl;
-		cout << setw(20) << "COMPANY" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << setw(10) << "WAIT" << setw(11) << "CHARGE" << endl;
-		cout << setw(20) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(10) << "TIME" << setw(11) << "REMAINING" << endl;
-		cout << setw(20) << "------------------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << setw(11) << "---------" << endl;
+		cout << setw(20) << "COMPANY" << setw(10) << "FLIGHT" << setw(10) << "CHARGE" << setw(10) << "WAIT" << setw(10) << "ENDING" << setw(11) << "CHARGE" << endl;
+		cout << setw(20) << "" << setw(10) << "TIME" << setw(10) << "TIME" << setw(10) << "TIME" << setw(10) << "STATE" << setw(11) << "REMAINING" << endl;
+		cout << setw(20) << "------------------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << setw(10) << "--------" << setw(11) << "---------" << endl;
 		std::for_each(evtols_.begin(), evtols_.end(), [](eVTOL* evtol) {
 			cout << setw(20) << evtol->company_name();
 			cout << fixed << setprecision(2);
 			cout << setw(10) << (evtol->total_flight_time() / (1000.0 * 60));
 			cout << setw(10) << (evtol->total_charge_time() / (1000.0 * 60));
 			cout << setw(10) << (evtol->total_wait_time() / (1000.0 * 60));
+			cout << setw(10) << evtol->stateName();
 			cout << setw(10) << evtol->percentChargeRemaining() << "%" << endl;
 			});
 	}
@@ -155,10 +156,10 @@ public:
 			avg_wait_time_minutes /= company_evtols.size();
 
 			// calculate max faults
-			std::vector<double> faults;
-			std::transform(company_evtols.begin(), company_evtols.end(), std::back_inserter(faults), [](eVTOL* evtol) { return evtol->faults(); });
+			std::vector<size_t> faults;
+			std::transform(company_evtols.begin(), company_evtols.end(), std::back_inserter(faults), [](eVTOL* evtol) { return evtol->number_of_faults(); });
 			auto max_faults_itr = std::max_element(faults.begin(), faults.end());
-			double max_faults = *max_faults_itr;
+			size_t max_faults = *max_faults_itr;
 
 			// calculate total passenger miles
 			size_t total_passenger_miles = std::accumulate(company_evtols.begin(), company_evtols.end(), 0, [](double total, eVTOL* evtol) {
